@@ -1,0 +1,21 @@
+info:
+  # 此配置项需要在编译打包时替换占位符，所以不能放到配置中心。此配置项可从bootstrap.yml中移除。
+  version: @project.version@
+spring:
+  application:
+    name: @project.artifactId@
+  cloud:
+    config:
+      discovery:
+        enabled: true
+        service-id: easycode-config-server
+      # 启动应用时连接不到ConfigServer则启动失败
+      fail-fast: true
+      # 启用重试机制时，需要提供 spring-retry 包且启用 fail-fast: true 功能
+      retry:
+        max-attempts: 6
+        max-interval: 2000
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:7000/eureka/
