@@ -1,5 +1,6 @@
 package com.easycodebox.spring.cloud.security;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.Serializable;
 import java.security.Principal;
 import lombok.Data;
@@ -71,6 +72,7 @@ public class AuthUser implements Principal, Serializable {
     private String mobile;
 
     @Override
+    @JsonIgnore
     public String getName() {
         return username;
     }
