@@ -15,22 +15,9 @@ spring:
       retry:
         max-attempts: 6
         max-interval: 2000
-  redis:
-    host: 192.168.200.105
-    port: 6379
-    lettuce:
-      pool:
-        max-wait: 30s
-        max-active: 8
-        max-idle: 8
 
 eureka:
   client:
     serviceUrl:
       defaultZone: http://localhost:7000/eureka/
-server:
-  servlet:
-    session:
-      timeout: 30m
-
 
