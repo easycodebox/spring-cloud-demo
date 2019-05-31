@@ -1,5 +1,7 @@
 package com.easycodebox.oauth.config;
 
+import com.easycodebox.spring.cloud.oauth2.OAuth2AuthenticationMixin;
+import com.easycodebox.spring.cloud.oauth2.OAuth2RequestMixin;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping;
@@ -10,6 +12,8 @@ import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSeriali
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.security.jackson2.CoreJackson2Module;
 import org.springframework.security.jackson2.SecurityJackson2Modules;
+import org.springframework.security.oauth2.provider.OAuth2Authentication;
+import org.springframework.security.oauth2.provider.OAuth2Request;
 
 /**
  * 配置Spring Session
@@ -50,6 +54,9 @@ public class SessionConfig implements BeanClassLoaderAware {
     private ObjectMapper objectMapper() {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModules(SecurityJackson2Modules.getModules(classLoader));
+        //下面两个MixIn用于RedisAuthorizationCodeServices存储AuthCode
+        mapper.addMixIn(OAuth2Authentication.class, OAuth2AuthenticationMixin.class);
+        mapper.addMixIn(OAuth2Request.class, OAuth2RequestMixin.class);
         // 开启默认的DefaultTyping
         mapper.enableDefaultTyping(DefaultTyping.NON_FINAL, As.PROPERTY);
         return mapper;
