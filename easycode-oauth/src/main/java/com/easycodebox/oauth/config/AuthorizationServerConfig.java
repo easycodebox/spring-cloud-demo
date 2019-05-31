@@ -1,6 +1,7 @@
 package com.easycodebox.oauth.config;
 
 import com.easycodebox.spring.cloud.oauth2.AuthUserAuthenticationConverter;
+import com.easycodebox.spring.cloud.oauth2.RedisAuthorizationCodeServices;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -14,6 +15,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.core.authority.AuthorityUtils;
@@ -27,6 +29,7 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.E
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
 import org.springframework.security.oauth2.provider.client.BaseClientDetails;
+import org.springframework.security.oauth2.provider.code.AuthorizationCodeServices;
 import org.springframework.security.oauth2.provider.endpoint.DefaultRedirectResolver;
 import org.springframework.security.oauth2.provider.endpoint.RedirectResolver;
 import org.springframework.security.oauth2.provider.token.DefaultAccessTokenConverter;
@@ -54,14 +57,18 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
 
     private final UserDetailsService userDetailsService;
 
+    private final RedisTemplate<Object, Object> redisTemplate;
+
     public AuthorizationServerConfig(BaseClientDetails details,
         AuthenticationConfiguration authenticationConfiguration,
         AuthorizationServerProperties properties,
-        UserDetailsService userDetailsService) throws Exception {
+        UserDetailsService userDetailsService,
+        RedisTemplate<Object, Object> redisTemplate) throws Exception {
         this.details = details;
         this.authenticationManager = authenticationConfiguration.getAuthenticationManager();
         this.properties = properties;
         this.userDetailsService = userDetailsService;
+        this.redisTemplate = redisTemplate;
     }
 
     @Override
@@ -93,6 +100,7 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
     public void configure(AuthorizationServerEndpointsConfigurer endpoints) {
         endpoints.accessTokenConverter(jwtTokenEnhancer())
             .tokenStore(jwtTokenStore())
+            .authorizationCodeServices(redisAuthorizationCodeServices())
             .redirectResolver(redirectResolver())
             // 设置userDetailsService，不然RefreshToken会因为获取不到用户信息，会重新走整个获取AccessToken流程
             .userDetailsService(userDetailsService);
@@ -144,6 +152,16 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
         // 借用key-alias存储公钥，用于client获取或者AuthServer启用ResourceServer功能
         converter.setVerifierKey(properties.getJwt().getKeyAlias());
         return converter;
+    }
+
+    /**
+     * 使用Redis存贮AuthorizationCode
+     *
+     * @return AuthorizationCodeServices
+     */
+    @Bean
+    public AuthorizationCodeServices redisAuthorizationCodeServices() {
+        return new RedisAuthorizationCodeServices(redisTemplate);
     }
 
     @Configuration

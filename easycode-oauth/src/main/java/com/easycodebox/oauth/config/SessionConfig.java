@@ -20,7 +20,7 @@ import org.springframework.security.jackson2.SecurityJackson2Modules;
 @Configuration
 public class SessionConfig implements BeanClassLoaderAware {
 
-    private ClassLoader loader;
+    private ClassLoader classLoader;
 
     /**
      * 定义SpringSession默认的Serializer
@@ -49,7 +49,7 @@ public class SessionConfig implements BeanClassLoaderAware {
      */
     private ObjectMapper objectMapper() {
         ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModules(SecurityJackson2Modules.getModules(this.loader));
+        mapper.registerModules(SecurityJackson2Modules.getModules(classLoader));
         // 开启默认的DefaultTyping
         mapper.enableDefaultTyping(DefaultTyping.NON_FINAL, As.PROPERTY);
         return mapper;
@@ -57,6 +57,6 @@ public class SessionConfig implements BeanClassLoaderAware {
 
     @Override
     public void setBeanClassLoader(ClassLoader classLoader) {
-        this.loader = classLoader;
+        this.classLoader = classLoader;
     }
 }
