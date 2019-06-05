@@ -2,6 +2,7 @@ package com.easycodebox.zuul.config;
 
 import com.easycodebox.spring.cloud.oauth2.AuthUserAuthenticationConverter;
 import com.easycodebox.spring.cloud.oauth2.CheckOAuth2AccessTokenFilter;
+import com.easycodebox.spring.cloud.oauth2.OAuth2ClientLogoutSuccessHandler;
 import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -13,6 +14,7 @@ import org.springframework.boot.autoconfigure.security.oauth2.resource.UserInfoR
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.boot.autoconfigure.web.ErrorProperties;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.security.oauth2.proxy.OAuth2ProxyAutoConfiguration;
 import org.springframework.cloud.security.oauth2.proxy.OAuth2TokenRelayFilter;
 import org.springframework.context.ApplicationContext;
@@ -65,7 +67,22 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        // 创建 CheckOAuth2AccessTokenFilter ，用于更新 OAuth2 Token
+
+        http.requestMatchers().anyRequest()
+            .and().authorizeRequests()
+            .antMatchers(errorProperties.getPath()).permitAll()
+            .anyRequest().authenticated()
+            .and().logout().permitAll().logoutSuccessHandler(logoutSuccessHandler())
+            .and().addFilterAfter(checkAccessTokenFilter(http), ExceptionTranslationFilter.class);
+    }
+
+    /**
+     * 创建 CheckOAuth2AccessTokenFilter ，用于更新 OAuth2 Token
+     *
+     * @param http HttpSecurity
+     * @return CheckOAuth2AccessTokenFilter
+     */
+    private CheckOAuth2AccessTokenFilter checkAccessTokenFilter(HttpSecurity http) {
         ApplicationContext context = http.getSharedObject(ApplicationContext.class);
         OAuth2RestOperations restTemplate = context.getBean(UserInfoRestTemplateFactory.class)
             .getUserInfoRestTemplate();
@@ -74,13 +91,18 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         checkAccessTokenFilter.setRestTemplate(restTemplate);
         checkAccessTokenFilter.setTokenServices(tokenServices);
         checkAccessTokenFilter.setEventPublisher(context);
+        return checkAccessTokenFilter;
+    }
 
-        http.requestMatchers().anyRequest()
-            .and().authorizeRequests()
-            .antMatchers(errorProperties.getPath()).permitAll()
-            .anyRequest().authenticated()
-            .and().logout().permitAll()
-            .and().addFilterAfter(checkAccessTokenFilter, ExceptionTranslationFilter.class);
+    /**
+     * 配置OAuth2ClientLogout规则
+     *
+     * @return OAuth2ClientLogoutSuccessHandler
+     */
+    @Bean
+    @ConfigurationProperties(prefix = "spring.security.logout")
+    public OAuth2ClientLogoutSuccessHandler logoutSuccessHandler() {
+        return new OAuth2ClientLogoutSuccessHandler();
     }
 
     /**

@@ -6,9 +6,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.boot.autoconfigure.web.ErrorProperties;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyAuthoritiesMapper;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -24,6 +26,8 @@ import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.MessageDigestPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.logout.SimpleUrlLogoutSuccessHandler;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 /**
  * {@code @EnableWebSecurity(debug = true)} - 打印请求及跳转相关的信息。如果你不想打印信息可省略此注解，因为SpringBoot默认提供。
@@ -57,13 +61,16 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
+        String logoutUrl = "/logout";
         http.requestMatchers()
-            .antMatchers("/login", "/logout", "/oauth/authorize", errorProperties.getPath())
+            .antMatchers("/login", logoutUrl, "/oauth/authorize", errorProperties.getPath())
             .and().authorizeRequests()
             .antMatchers(errorProperties.getPath()).permitAll()
             .anyRequest().authenticated()
             .and().formLogin().permitAll()
-            .and().logout().permitAll();
+            .and().logout().permitAll().logoutSuccessHandler(logoutSuccessHandler())
+            // GET请求可以执行logout，便于OAuthClient 302 logout
+            .logoutRequestMatcher(new AntPathRequestMatcher(logoutUrl, HttpMethod.GET.name()));
     }
 
     @Override
@@ -81,6 +88,17 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                     return object;
                 }
             });
+    }
+
+    /**
+     * 配置OAuth2ServerLogout规则
+     *
+     * @return OAuth2ClientLogoutSuccessHandler
+     */
+    @Bean
+    @ConfigurationProperties(prefix = "spring.security.logout")
+    public SimpleUrlLogoutSuccessHandler logoutSuccessHandler() {
+        return new SimpleUrlLogoutSuccessHandler();
     }
 
     /**
