@@ -49,6 +49,7 @@
       <artifactId>mysql-connector-java</artifactId>
     </dependency>
 
+    <!-- Spring Redis/Session -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-data-redis</artifactId>
@@ -60,6 +61,12 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-pool2</artifactId>
+    </dependency>
+
+    <!-- 模板引擎 -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-freemarker</artifactId>
     </dependency>
 
   </dependencies>

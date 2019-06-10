@@ -61,13 +61,15 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
+        String loginUrl = "/login";
         String logoutUrl = "/logout";
         http.requestMatchers()
-            .antMatchers("/login", logoutUrl, "/oauth/authorize", errorProperties.getPath())
+            .antMatchers(loginUrl, logoutUrl, "/oauth/authorize", errorProperties.getPath())
             .and().authorizeRequests()
             .antMatchers(errorProperties.getPath()).permitAll()
             .anyRequest().authenticated()
-            .and().formLogin().permitAll()
+            // loginPage(loginUrl) - 自定义loginPage，不使用DefaultLoginPageGeneratingFilter、DefaultLogoutPageGeneratingFilter自动生成登录、登出页面
+            .and().formLogin().loginPage(loginUrl).permitAll()
             .and().logout().permitAll().logoutSuccessHandler(logoutSuccessHandler())
             // GET请求可以执行logout，便于OAuthClient 302 logout
             .logoutRequestMatcher(new AntPathRequestMatcher(logoutUrl, HttpMethod.GET.name()));
