@@ -17,6 +17,13 @@ import org.springframework.web.servlet.ModelAndView;
 @Controller
 public class LoginController extends WebApplicationObjectSupport {
 
+    /**
+     * 显示登录页面
+     *
+     * @param error 当前登录请求是否包含错误信息
+     * @param request 请求对象
+     * @return 返回登录视图
+     */
     @GetMapping("/login")
     public ModelAndView login(String error, HttpServletRequest request) {
         ModelAndView modelAndView = new ModelAndView("/login");
@@ -26,6 +33,7 @@ public class LoginController extends WebApplicationObjectSupport {
                 .getMessage("AbstractUserDetailsAuthenticationProvider.badCredentials");
             HttpSession session = request.getSession(false);
             if (session != null) {
+                // 从Session中获取异常信息
                 AuthenticationException ex = (AuthenticationException) session
                     .getAttribute(WebAttributes.AUTHENTICATION_EXCEPTION);
                 if (ex != null) {
