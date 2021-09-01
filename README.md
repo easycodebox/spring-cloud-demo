@@ -106,6 +106,19 @@ eureka:
 
 ### Hystrix - 熔断机制
 
+* Feign启用Hystrix时，HystrixCommandKey默认通过以下规则生成：`feign.Feign.configKey(java.lang.Class, java.lang.reflect.Method)`
+    ```yaml
+    hystrix:
+      command:
+        # 通过上述Feign.configKey()方法生成
+        FooHttpApi#list(String,List):
+          execution.isolation.thread.timeoutInMilliseconds: 10000
+    ```
+    * HystrixPropertiesStrategy - 属性获取规则
+    * HystrixCommandProperties - HystrixCommand配置及默认值
+    * HystrixThreadPoolProperties - HystrixThreadPool配置及默认值
+    * 默认`HystrixThreadPoolKey`值为`HystrixCommandGroupKey`，`HystrixCommandGroupKey`为`Feign Client Name`
+
 * [hystrix-javanica -【java注解风格 - 重要】](https://github.com/Netflix/Hystrix/tree/master/hystrix-contrib/hystrix-javanica)
 * [How it Works](https://github.com/Netflix/Hystrix/wiki/How-it-Works)
 * [How To Use](https://github.com/Netflix/Hystrix/wiki/How-To-Use)
@@ -119,6 +132,25 @@ eureka:
   因为`SEMAPHORE`使用caller线程执行的，并没有另起线程。所以`SEMAPHORE`通常使用于执行时间不长的场景中。
   if a dependency is isolated with a semaphore and then becomes latent, the parent threads will remain blocked 
   until the underlying network calls timeout.
+
+* [Making the Netflix API More Resilient](https://netflixtechblog.com/making-the-netflix-api-more-resilient-a8ec62159c2d) -
+Hystrix概念及监控介绍
+
+* [Fault Tolerance in a High Volume, Distributed System](https://netflixtechblog.com/fault-tolerance-in-a-high-volume-distributed-system-91ab4faae74a) -
+深入讲解`Fault Tolerance`、原理图、最佳实践
+
+* [Performance and Fault Tolerance for the Netflix API -【非常重要】](https://speakerdeck.com/benjchristensen/performance-and-fault-tolerance-for-the-netflix-api-august-2012) -
+Fault Tolerance详解、`性能调优`、提供各种指标依据（包含SEMAPHORE和THREAD压测对比数据）、`指标详解`
+    * `Tryable semaphores` for “trusted” clients and fallbacks. Semaphore isolation on the other hand is used for dependencies
+    which are very high-volume in-memory lookups that never result in a synchronous network request.
+    * `Separate threads` for “untrusted” clients
+    * Thread Queue
+        * Requests in queue block user threads thus must be considered part of the resources being allocated to a dependency.
+        * Setting a queue to 100 is equivalent to saying 100 incoming requests can block while waiting for this dependency.
+        There is typically not a good reason for having a queue size higher than 5-10.
+        * Bursting should be handled through batching and throughput should be accommodated by a large enough thread pool.
+        It is better to increase the thread-pool size rather than the queue as commands executing in the thread-pool receive
+        forward progress whereas items in the queue do not.
 
 ### Hystrix Dashboard
 
@@ -298,6 +330,7 @@ resiliency、security等功能。
     * Filters Endpoint（显示所有filters） - `GET /filters`
   * `/actuator/metrics`会统计出路由失败的信息
   * 使用`Zuul RequestContext`在Filters间共享数据，`FilterConstants`包含了filter需要的key
+  * `ZuulConstants`定义了常量，常量为`配置项Key`
   * [Uploading Files through Zuul](https://cloud.spring.io/spring-cloud-static/spring-cloud-netflix/2.0.2.RELEASE/single/spring-cloud-netflix.html#_uploading_files_through_zuul)
   * [Disable Zuul Filters](https://cloud.spring.io/spring-cloud-static/spring-cloud-netflix/2.0.2.RELEASE/single/spring-cloud-netflix.html#_disable_zuul_filters)
   * [Providing Hystrix Fallbacks For Routes](https://cloud.spring.io/spring-cloud-static/spring-cloud-netflix/2.0.2.RELEASE/single/spring-cloud-netflix.html#hystrix-fallbacks-for-routes)
